@@ -1,0 +1,6 @@
+C:\Users\Kanator\Google Drive\Magnet Playground\MagnetPlayground\MagnetPlayground\bin\MagnetPlayground.dll.config
+C:\Users\Kanator\Google Drive\Magnet Playground\MagnetPlayground\MagnetPlayground\bin\MagnetPlayground.dll
+C:\Users\Kanator\Google Drive\Magnet Playground\MagnetPlayground\MagnetPlayground\bin\MagnetPlayground.pdb
+C:\Users\Kanator\Google Drive\Magnet Playground\MagnetPlayground\MagnetPlayground\obj\Debug\MagnetPlayground.csprojResolveAssemblyReference.cache
+C:\Users\Kanator\Google Drive\Magnet Playground\MagnetPlayground\MagnetPlayground\obj\Debug\MagnetPlayground.dll
+C:\Users\Kanator\Google Drive\Magnet Playground\MagnetPlayground\MagnetPlayground\obj\Debug\MagnetPlayground.pdb
