@@ -184,13 +184,13 @@ class AmCP {
         }
     }
 
-    getBaseTwinCP(cps: Array<AmCP>) {
+    public GetBaseTwinCP(cps: Array<AmCP>): AmCP {
         if (this.TwinHasParms === 1) {
             //var ddd = cps[this.CpTwinNumber];
             //if (ddd === undefined) {
             //    ddd = 2;
             //}
-            return cps[this.CpTwinNumber].getBaseTwinCP(cps);
+            return cps[this.CpTwinNumber].GetBaseTwinCP(cps);
         }
         else {
             return this;

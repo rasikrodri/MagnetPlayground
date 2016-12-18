@@ -156,13 +156,13 @@ var AmCP = (function () {
             }
         }
     };
-    AmCP.prototype.getBaseTwinCP = function (cps) {
+    AmCP.prototype.GetBaseTwinCP = function (cps) {
         if (this.TwinHasParms === 1) {
             //var ddd = cps[this.CpTwinNumber];
             //if (ddd === undefined) {
             //    ddd = 2;
             //}
-            return cps[this.CpTwinNumber].getBaseTwinCP(cps);
+            return cps[this.CpTwinNumber].GetBaseTwinCP(cps);
         }
         else {
             return this;
