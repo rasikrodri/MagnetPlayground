@@ -1,22 +1,34 @@
 ﻿class MagnetManager {
-    private magnets: Array<Magnet>
-    constructor(_magnets: Array<Magnet> = new Array<Magnet>()) {
+    private magnets: Array<MagnetPair>
+    constructor(_magnets: Array<MagnetPair> = new Array<MagnetPair>()) {
         this.magnets = _magnets;
     }
 
     AddMagnetsFromAMGroupMeshes(_scene: BABYLON.Scene, _amModel: AMModel) {
         //Get magnet meshes
-        var magnetMeshes = new Array<BABYLON.Mesh>();
+        var magnetGroups = new Array<AmGroup>();
         _amModel.Groups.forEach(function (group, i, groups) {
             if (group.MagnetNegativePoleCp !== undefined) {
-                magnetMeshes.push(group.GroupMesh);
+                magnetGroups.push(group);
             }
         });
 
-        //Create MagnetManager s
-        for (var i = 0; i < magnetMeshes.length; i++) {
-            for (var a = i + 1; a < magnetMeshes.length; a++) {
-                this.magnets.push(new Magnet(_scene, magnetMeshes[i], magnetMeshes[a]));
+        //Create MagnetPars
+        var twinCp: AmCP;
+        for (var i = 0; i < magnetGroups.length; i++) {
+            var firstGroup = magnetGroups[i];
+            twinCp = _amModel.OrderedCps[firstGroup.MagnetPositivePoleCp].GetBaseTwinCP(_amModel.OrderedCps);
+            var fPositivePosition = new BABYLON.Vector3(twinCp.X, twinCp.Y, twinCp.Z);
+            twinCp = _amModel.OrderedCps[firstGroup.MagnetNegativePoleCp].GetBaseTwinCP(_amModel.OrderedCps);
+            var fNegativePosition = new BABYLON.Vector3(twinCp.X, twinCp.Y, twinCp.Z);
+            for (var a = i + 1; a < magnetGroups.length; a++) {
+                var secondGroup = magnetGroups[a];
+                twinCp = _amModel.OrderedCps[secondGroup.MagnetPositivePoleCp].GetBaseTwinCP(_amModel.OrderedCps);
+                var sPosiivePosition = new BABYLON.Vector3(twinCp.X, twinCp.Y, twinCp.Z);
+                twinCp = _amModel.OrderedCps[secondGroup.MagnetNegativePoleCp].GetBaseTwinCP(_amModel.OrderedCps);
+                var sNegativePosition = new BABYLON.Vector3(twinCp.X, twinCp.Y, twinCp.Z);
+                this.magnets.push(new MagnetPair(_scene, firstGroup.GroupMesh, secondGroup.GroupMesh,
+                    fPositivePosition, fNegativePosition, sPosiivePosition, sNegativePosition));
             }
         }
     }
@@ -25,79 +37,110 @@
         this.magnets.forEach(function (currMagnet, i, magnets) {
             currMagnet.Update();
         });
-
-        //var magnet7 = this.amModel.Groups[7].GroupMesh;
-        //var factor = 4;
-        //var s = BABYLON.MeshBuilder.CreateSphere("bigSphere", { diameter: 2, segments: 16 }, this.scene);
-        //s.isVisible = true;
-
-        //var scene = this.scene;
-        //scene.registerBeforeRender(function () {
-        //    var pickInfo = scene.pick(scene.pointerX, scene.pointerY, function (m) {
-        //        return m === magnet7
-        //    }, true);
-        //    if (pickInfo.hit) {
-        //        s.position = pickInfo.pickedPoint;
-        //    //    contactPoints.forEach(function (c, idx) {
-        //    //        if (s.intersectsPoint(c.position)) {
-        //    //            c.physicsImpostor.applyImpulse(new BABYLON.Vector3(Math.random() * factor, Math.random() * factor, Math.random() * factor), c.position)
-        //    //        }
-        //    //    });
-
-        //    }
-        //})
     }
 }
 
-class Magnet {
+class MagnetPair {
     private scene: BABYLON.Scene;
-    private firstMesh: BABYLON.Mesh;
-    private secondMesh: BABYLON.Mesh;
-    private line: BABYLON.Mesh;
-    constructor(_scene: BABYLON.Scene, firstMesh: BABYLON.Mesh, secondMesh: BABYLON.Mesh) {
+    private firstMesh: BABYLON.Mesh;//first magnet
+    private fPosMesh: BABYLON.Mesh;//first magnet positive mesh
+    private fNegMesh: BABYLON.Mesh;//first magnet negative mesh
+    private secondMesh: BABYLON.Mesh;//second magnet
+    private sPosMesh: BABYLON.Mesh;//second magnet positive mesh
+    private sNegMesh: BABYLON.Mesh;//second magnet negative mesh
+    private lines: BABYLON.LinesMesh;//line from first magnet to second magnet
+    constructor(_scene: BABYLON.Scene, firstMesh: BABYLON.Mesh, secondMesh: BABYLON.Mesh,
+        fPositive: BABYLON.Vector3, fNegative: BABYLON.Vector3, sPositive: BABYLON.Vector3, sNegative: BABYLON.Vector3) {
         this.scene = _scene;
         this.firstMesh = firstMesh;
         this.secondMesh = secondMesh;
-        this.CreateLine();
+        this.CreatePolesMeshes(fPositive, fNegative, sPositive, sNegative);
+        this.CreateLines();
     }
-    private CreateLine() {
-        var mesh = new BABYLON.Mesh("magline", this.scene);
-        var vertexData = new BABYLON.VertexData();
-        vertexData.positions = this.GetVertexPositions();
-        vertexData.indices = [0, 1, 2, 0, 2, 3];
-        vertexData.applyToMesh(mesh);
+    private CreatePolesMeshes(fPositive: BABYLON.Vector3, fNegative: BABYLON.Vector3,
+        sPositive: BABYLON.Vector3, sNegative: BABYLON.Vector3) {
+        var redPositive = new BABYLON.StandardMaterial("redPositive", this.scene);
+        redPositive.diffuseColor = new BABYLON.Color3(1, 0, 0);
+        var blackNegative = new BABYLON.StandardMaterial("blackNegative", this.scene);
+        blackNegative.diffuseColor = new BABYLON.Color3(0, 0, 0);
+        var segments = 0.5;
+        var diameter = 0.2;
+        var visible = true;
 
-
-        this.line = mesh;
+        
+        if (this.firstMesh.getChildMeshes().length === 0) {
+            this.fPosMesh = BABYLON.Mesh.CreateSphere("pospole", segments, diameter, this.scene, false);
+            this.fPosMesh.material = redPositive;
+            this.fPosMesh.isVisible = visible;
+            this.fPosMesh.parent = this.firstMesh;
+            this.fPosMesh.position = fPositive;
+            this.fNegMesh = BABYLON.Mesh.CreateSphere("negpole", segments, diameter, this.scene, false);
+            this.fNegMesh.material = blackNegative;
+            this.fNegMesh.isVisible = visible;
+            this.fNegMesh.parent = this.firstMesh;
+            this.fNegMesh.position = fNegative;
+        }
+        else {
+            var children = this.firstMesh.getChildMeshes();
+            this.fPosMesh = children[0] as BABYLON.Mesh;
+            this.fNegMesh = children[1] as BABYLON.Mesh;
+        }
+        
+        if (this.secondMesh.getChildMeshes().length === 0) {
+            this.sPosMesh = BABYLON.Mesh.CreateSphere("pospole", segments, diameter, this.scene, false);
+            this.sPosMesh.material = redPositive;
+            this.sPosMesh.isVisible = visible;
+            this.sPosMesh.parent = this.secondMesh;
+            this.sPosMesh.position = sPositive;
+            this.sNegMesh = BABYLON.Mesh.CreateSphere("negpole", segments, diameter, this.scene, false);
+            this.sNegMesh.material = blackNegative;
+            this.sNegMesh.isVisible = visible;
+            this.sNegMesh.parent = this.secondMesh;
+            this.sNegMesh.position = sNegative;
+        }
+        else {
+            var children = this.secondMesh.getChildMeshes();
+            this.sPosMesh = children[0] as BABYLON.Mesh;
+            this.sNegMesh = children[1] as BABYLON.Mesh;
+        }
+    }
+    private CreateLines() {
+        this.lines = BABYLON.Mesh.CreateLines("lines", this.CalculateLinePosition(), this.scene, true);
+        //this.lines = BABYLON.Mesh.CreateDashedLines("lines", [this.firstMesh.position, this.secondMesh.position], 0.5, 0.5, 10, this.scene, true);
     }
     private UpdateLine() {
-        var vertexData = new BABYLON.VertexData();
-        vertexData.positions = this.GetVertexPositions();
-        vertexData.indices = [0, 1, 2, 0, 2, 3];
-        vertexData.applyToMesh(this.line);
-
-        //var positions = this.GetVertexPositions();
-        //this.line.updateVerticesData(BABYLON.VertexBuffer.PositionKind, positions, false, false);
-        //var normals = new Array<number>();
-        //BABYLON.VertexData.ComputeNormals(positions, [0, 1, 2, 0, 2, 3], normals);
-        //this.line.updateVerticesData(BABYLON.VertexBuffer.NormalKind, normals, false, false);
+        this.lines = BABYLON.MeshBuilder.CreateLines(null, { points: this.CalculateLinePosition(), instance: this.lines }, this.scene);
+        //this.lines = BABYLON.MeshBuilder.CreateDashedLines(null, { points: [this.firstMesh.position, this.secondMesh.position], instance: this.lines }, this.scene);
     }
-    private GetVertexPositions(): Array<number> {
-        var positions = new Array<number>();
-        positions.push(this.firstMesh.position.x);
-        positions.push(this.firstMesh.position.y + 0.05);
-        positions.push(this.firstMesh.position.z);
-        positions.push(this.firstMesh.position.x);
-        positions.push(this.firstMesh.position.y - 0.05);
-        positions.push(this.firstMesh.position.z);
+    CalculateLinePosition(): BABYLON.Vector3[] {
+        var fPAbsolute = this.fPosMesh.getAbsolutePosition();
+        var fNAbsolute = this.fNegMesh.getAbsolutePosition();
+        var sPAbsolute = this.sPosMesh.getAbsolutePosition();
+        var sNAbsolute = this.sNegMesh.getAbsolutePosition();
+        var posToSecond = BABYLON.Vector3.Distance(fPAbsolute, this.secondMesh.getAbsolutePosition());
+        var negToSecond = BABYLON.Vector3.Distance(fNAbsolute, this.secondMesh.getAbsolutePosition());
+        var posToFirst = BABYLON.Vector3.Distance(sPAbsolute, this.firstMesh.getAbsolutePosition());
+        var negToFirst = BABYLON.Vector3.Distance(sNAbsolute, this.firstMesh.getAbsolutePosition());
+        var startPolePos: BABYLON.Vector3;
+        var endPolePos: BABYLON.Vector3;
 
-        positions.push(this.secondMesh.position.x);
-        positions.push(this.secondMesh.position.y - 0.05);
-        positions.push(this.secondMesh.position.z);
-        positions.push(this.secondMesh.position.x);
-        positions.push(this.secondMesh.position.y + 0.05);
-        positions.push(this.secondMesh.position.z);
-        return positions;
+        if (posToSecond < negToSecond) {
+            startPolePos = fPAbsolute;
+        }
+        else {
+            startPolePos = fNAbsolute;
+        }
+
+        if (posToFirst < negToFirst) {
+            endPolePos = sPAbsolute
+        }
+        else {
+            endPolePos = sNAbsolute
+        }
+
+        this.firstMesh.app
+
+        return [startPolePos, endPolePos];
     }
     Update() {
         this.UpdateLine();
