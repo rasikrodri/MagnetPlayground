@@ -118,7 +118,12 @@ var MagnetPair = (function () {
         else {
             endPolePos = sNAbsolute;
         }
-        this.firstMesh.app;
+        //the force is the direction, contact point is wherein the object to apply that force
+        //calculate direction of force towards the secondMesh negative pole, etc.
+        var direction = sNAbsolute.subtract(fPAbsolute);
+        this.firstMesh.applyImpulse(direction.scale(0.0005), startPolePos);
+        var direction = fPAbsolute.subtract(sNAbsolute);
+        this.secondMesh.applyImpulse(direction.scale(0.0005), endPolePos);
         return [startPolePos, endPolePos];
     };
     MagnetPair.prototype.Update = function () {
