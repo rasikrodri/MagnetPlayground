@@ -47,7 +47,7 @@ var AnimationMasterModelLoader = (function () {
             var patch = this.amModel.Patches[p];
             for (var c = 0; c < patch.Cps.length; c++) {
                 cp = patch.Cps[c];
-                baseTweenCp = cp.getBaseTwinCP(this.amModel.OrderedCps);
+                baseTweenCp = cp.GetBaseTwinCP(this.amModel.OrderedCps);
                 if (baseTweenCp.VertexIndex === -1) {
                     baseTweenCp.VertexIndex = currentVertexIndex;
                     currentVertexIndex += 1;
@@ -142,7 +142,7 @@ var AnimationMasterModelLoader = (function () {
         for (var i = 0; i < groupMesh.Patches.length; i++) {
             for (var c = 0; c < groupMesh.Patches[i].Cps.length; c++) {
                 groupMesh.Patches[i].Cps[c].VertexIndex = -1;
-                groupMesh.Patches[i].Cps[c].getBaseTwinCP(this.amModel.OrderedCps).VertexIndex = -1;
+                groupMesh.Patches[i].Cps[c].GetBaseTwinCP(this.amModel.OrderedCps).VertexIndex = -1;
             }
         }
         var positions = this.GetMeshBuildVertexArrayForGroupMesh(groupMesh, this.amModel.OrderedCps);
@@ -204,7 +204,7 @@ var AnimationMasterModelLoader = (function () {
     AnimationMasterModelLoader.prototype.GetMeshBuildVertexArrayForGroupMesh = function (groupMesh, cps) {
         //Get the front most back most, left, right, bottom and up most cps to calculate the center
         //and to place the whole mesh as it it's center is in x, y, z = 0
-        var topMostCp = groupMesh.Patches[0].Cps[0].getBaseTwinCP(cps);
+        var topMostCp = groupMesh.Patches[0].Cps[0].GetBaseTwinCP(cps);
         var bottomMostCp = topMostCp;
         var leftMostCp = topMostCp;
         var rigthMostCp = topMostCp;
@@ -212,7 +212,7 @@ var AnimationMasterModelLoader = (function () {
         var backMostCp = topMostCp;
         for (var i = 0; i < groupMesh.Patches.length; i++) {
             for (var c = 0; c < groupMesh.Patches[i].Cps.length; c++) {
-                var baseCp = groupMesh.Patches[i].Cps[c].getBaseTwinCP(cps);
+                var baseCp = groupMesh.Patches[i].Cps[c].GetBaseTwinCP(cps);
                 if (topMostCp.Y < baseCp.Y) {
                     topMostCp = baseCp;
                 }
@@ -249,14 +249,18 @@ var AnimationMasterModelLoader = (function () {
         for (var i = 0; i < groupMesh.Patches.length; i++) {
             for (var c = 0; c < groupMesh.Patches[i].Cps.length; c++) {
                 cp = groupMesh.Patches[i].Cps[c];
-                var baseCp = cp.getBaseTwinCP(cps);
+                var baseCp = cp.GetBaseTwinCP(cps);
                 if (baseCp.VertexIndex === -1) {
                     cp.VertexIndex = currentVertexIndex;
                     baseCp.VertexIndex = currentVertexIndex;
                     currentVertexIndex += 1;
-                    positions.push(baseCp.X - meshCenter.x);
-                    positions.push(baseCp.Y - meshCenter.y);
-                    positions.push(baseCp.Z - meshCenter.z);
+                    ////the following will save the cp positions as if the center of the object is at 0, 0, 0
+                    baseCp.X = baseCp.X - meshCenter.x;
+                    baseCp.Y = baseCp.Y - meshCenter.y;
+                    baseCp.Z = baseCp.Z - meshCenter.z;
+                    positions.push(baseCp.X);
+                    positions.push(baseCp.Y);
+                    positions.push(baseCp.Z);
                 }
                 else {
                     cp.VertexIndex = baseCp.VertexIndex;
@@ -320,54 +324,4 @@ var AnimationMasterModelLoader = (function () {
     };
     return AnimationMasterModelLoader;
 }());
-//class MagnetManager {
-//    private scene: BABYLON.Scene;
-//    private firstMesh: BABYLON.Mesh;
-//    private secondMesh: BABYLON.Mesh;
-//    private line: BABYLON.Mesh;
-//    constructor(_scene:BABYLON.Scene, firstMesh: BABYLON.Mesh, secondMesh: BABYLON.Mesh) {
-//        this.scene = _scene;
-//        this.firstMesh = firstMesh;
-//        this.secondMesh = secondMesh;
-//        this.CreateLine();
-//    }
-//    private CreateLine() {
-//        var mesh = new BABYLON.Mesh("magline", this.scene);        
-//        var vertexData = new BABYLON.VertexData();
-//        vertexData.positions = this.GetVertexPositions();
-//        vertexData.indices = [0, 1, 2, 0, 2, 3];
-//        vertexData.applyToMesh(mesh);
-//        this.line = mesh;
-//    }
-//    private UpdateLine() {
-//        var vertexData = new BABYLON.VertexData();
-//        vertexData.positions = this.GetVertexPositions();
-//        vertexData.indices = [0, 1, 2, 0, 2, 3];
-//        vertexData.applyToMesh(this.line);
-//        //var positions = this.GetVertexPositions();
-//        //this.line.updateVerticesData(BABYLON.VertexBuffer.PositionKind, positions, false, false);
-//        //var normals = new Array<number>();
-//        //BABYLON.VertexData.ComputeNormals(positions, [0, 1, 2, 0, 2, 3], normals);
-//        //this.line.updateVerticesData(BABYLON.VertexBuffer.NormalKind, normals, false, false);
-//    }
-//    private GetVertexPositions(): Array<number> {
-//        var positions = new Array<number>();
-//        positions.push(this.firstMesh.position.x);
-//        positions.push(this.firstMesh.position.y + 0.05);
-//        positions.push(this.firstMesh.position.z);
-//        positions.push(this.firstMesh.position.x);
-//        positions.push(this.firstMesh.position.y - 0.05);
-//        positions.push(this.firstMesh.position.z);
-//        positions.push(this.secondMesh.position.x);
-//        positions.push(this.secondMesh.position.y - 0.05);
-//        positions.push(this.secondMesh.position.z);
-//        positions.push(this.secondMesh.position.x);
-//        positions.push(this.secondMesh.position.y + 0.05);
-//        positions.push(this.secondMesh.position.z);
-//        return positions;
-//    }
-//    Update() {
-//        this.UpdateLine();
-//    }
-//}
 //# sourceMappingURL=AnimationMasterModelLoader.js.map
