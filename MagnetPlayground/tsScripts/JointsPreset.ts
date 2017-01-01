@@ -16,8 +16,8 @@ class JointPresetProcessor {
 
         return g;
     }
-    GetAmJointPropertyByName(userProperties: AmUserProperty[], amJointName: string): AmUserProperty {
-        var up: AmUserProperty;
+    GetAmJointPropertyByName(userProperties: Array<AmJointProperty>, amJointName: string): AmJointProperty {
+        var up: AmJointProperty;
         userProperties.some(function (e) {
             if (e.JointPropertyName === amJointName) { up = e; return true; }
         })

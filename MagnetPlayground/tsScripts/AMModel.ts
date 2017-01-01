@@ -1,5 +1,6 @@
 ﻿class AMModel {
-    UserProperties: Array<AmUserProperty>;
+    JointsUserProperties: Array<AmJointProperty>;
+    PhysicsUserProperties: Array<AmPhysicsProperty>;
     Splines: Array<AmSpline>;
     OrderedCps: Array<AmCP>;
     Normals: Array<AmNormal>;
@@ -21,7 +22,8 @@
     private LoadUserProperties(mesh: XMLDocument) {
         //This will get folders, User Properties is a folder
         var propertyFoldersData = mesh.getElementsByTagName("USERPROPERTY");
-        this.UserProperties = new Array<AmUserProperty>();
+        this.JointsUserProperties = new Array<AmJointProperty>();
+        this.PhysicsUserProperties = new Array<AmPhysicsProperty>();
         for (var i = 0; i < propertyFoldersData.length; i++) {
             var currFolder = propertyFoldersData[i];
             for (var p = 0; p < currFolder.childNodes.length; p++) {
@@ -29,10 +31,10 @@
                 if (property.nodeName === "BOOL" || property.nodeName === "PERCENT") {
                     var innerHtml = (property as Element).innerHTML.trim();
                     if (innerHtml.indexOf("-joint") === 0) {
-                        this.UserProperties.push(new AmUserProperty(innerHtml, AmUserPropertySwitchType[property.nodeName]));
+                        this.JointsUserProperties.push(new AmJointProperty(innerHtml, AmUserPropertySwitchType[property.nodeName]));
                     }
-                    else if (innerHtml.indexOf("-physics") === 0){
-                        this.UserProperties.push(new AmUserProperty(innerHtml, AmUserPropertySwitchType[property.nodeName]));
+                    else if (innerHtml.indexOf("-physics") === 0) {
+                        this.PhysicsUserProperties.push(new AmPhysicsProperty(innerHtml, AmUserPropertySwitchType[property.nodeName]));
                     }
                 }
             }
@@ -297,6 +299,7 @@ class AmGroup {
     BottomMostCp: AmCP;
     ImpostorType: number;
     JointPropertyName: string;
+    PhysicsPropertyName: string;
 
     //Used to load the parameters in the same order the function asks for excluding this GroupMesh itself
     JointParametersInOrder = new Array<string>();
@@ -317,43 +320,9 @@ class AmGroup {
             var jsonObj = AmInLineObjectParser.ParseTextObjectFromInnerHtml(name.substr(5));
 
             if (jsonObj.Name !== undefined) {
-                this.Name = jsonObj.Name;
+                this.Name = jsonObj.Name.toLowerCase();
             }
-            if (jsonObj.Mass !== undefined) {
-                this.Mass = parseFloat(jsonObj.Mass);
-            }
-            if (jsonObj.Friction !== undefined) {
-                this.Friction = parseFloat(jsonObj.Friction);
-            }
-            if (jsonObj.Restitution !== undefined) {
-                this.Restitution = parseFloat(jsonObj.Restitution);
-            }
-            if (jsonObj.Impostor !== undefined) {
-                switch (jsonObj.Impostor.toLowerCase()) {
-                    case "plane":
-                        this.ImpostorType = BABYLON.PhysicsImpostor.PlaneImpostor;
-                        break;
-                    case "box":
-                        this.ImpostorType = BABYLON.PhysicsImpostor.BoxImpostor;
-                        break;
-                    case "cylinder":
-                        this.ImpostorType = BABYLON.PhysicsImpostor.CylinderImpostor;
-                        break;
-                    case "sphere":
-                        this.ImpostorType = BABYLON.PhysicsImpostor.SphereImpostor;
-                        break;
-                    case "mesh":
-                        this.ImpostorType = BABYLON.PhysicsImpostor.MeshImpostor;
-                        break;
-                    case "none":
-                        this.ImpostorType = BABYLON.PhysicsImpostor.NoImpostor;
-                        break;
-                    default:
-                        alert("Impostor " + jsonObj.Impostor + " not implemented");
-                        break;
-                }
 
-            }
             if (jsonObj.PossitivePoleCp !== undefined) {
                 this.MagnetPositivePoleCp = parseInt(jsonObj.PossitivePoleCp);
                 try {
@@ -374,7 +343,10 @@ class AmGroup {
                 }
             }
             if (jsonObj.Joint !== undefined) {
-                this.JointPropertyName = jsonObj.Joint;
+                this.JointPropertyName = jsonObj.Joint.toLowerCase();
+            }
+            if (jsonObj.Physics !== undefined) {
+                this.PhysicsPropertyName = jsonObj.Physics.toLowerCase();
             }
         }
         else {
@@ -433,48 +405,104 @@ class AmUserProperty {
     PercentFactorialValue = 100;//Used for PERCENT properties. It is the max percent on the slider
     BoolDefaultValue: boolean;
     BoolValue: boolean;//for on/off
-    FloatValue: number;//For percent. The selecte percent
+    FloatValue: number;//For percent. The selecte percent    
 
-    JointPropertyName: string;
-    JointPreset: JointPreset;
-    OnMesh: string;
-
-    constructor(jointPropertyInnerHtml: string, switchType: AmUserPropertySwitchType) {
-        var s = jointPropertyInnerHtml.trim().split("\n");
-        var jsonObj = AmInLineObjectParser.ParseTextObjectFromInnerHtml(s[0].substr(6));
-
-        this.JointPropertyName = jsonObj.Name;
-        this.JointPreset = JointPreset[jsonObj.PresetName as string];
-
-        if (jsonObj.With !== undefined) {
-            this.OnMesh = jsonObj.With;
-        }
-        else if (jsonObj.On != undefined) {
-            this.OnMesh = jsonObj.On;
-        }
-
-
-
+    constructor(switchType: AmUserPropertySwitchType, propertyText: string[]) {
         this.SwitchType = switchType;
 
-        for (var i = 1; i < s.length; i++) {
-            if (s[i].indexOf("DefaultValue=") === 0) {
-                this.BoolDefaultValue = (s[i].substr(13) === "TRUE") ? true : false;
+        for (var i = 1; i < propertyText.length; i++) {
+            if (propertyText[i].indexOf("DefaultValue=") === 0) {
+                this.BoolDefaultValue = (propertyText[i].substr(13) === "TRUE") ? true : false;
             }
-            else if (s[i].indexOf("Value=") === 0) {
+            else if (propertyText[i].indexOf("Value=") === 0) {
                 if (switchType === AmUserPropertySwitchType.BOOL) {
-                    this.BoolValue = (s[i].substr(6) === "TRUE") ? true : false;
+                    this.BoolValue = (propertyText[i].substr(6) === "TRUE") ? true : false;
                 }
                 else if (switchType === AmUserPropertySwitchType.PERCENT) {
-                    this.FloatValue = parseFloat(s[i].substr(6));
+                    this.FloatValue = parseFloat(propertyText[i].substr(6));
                 }
             }
-            else if (s[i].indexOf("FactorValue=") === 0) {//Percent
-                this.PercentFactorialValue = parseFloat(s[i].substr(12))
+            else if (propertyText[i].indexOf("FactorValue=") === 0) {//Percent
+                this.PercentFactorialValue = parseFloat(propertyText[i].substr(12))
             }
         }
     }
 }
+class AmJointProperty extends AmUserProperty {
+    JointPropertyName: string;
+    JointPreset: JointPreset;
+    OnMesh: string;
+    constructor(jointPropertyInnerHtml: string, switchType: AmUserPropertySwitchType) {
+        var s = jointPropertyInnerHtml.trim().split("\n");
+        var jsonObj = AmInLineObjectParser.ParseTextObjectFromInnerHtml(s[0].substr(6));
+
+        super(switchType, s);
+
+        this.JointPropertyName = jsonObj.Name.toLowerCase();
+        this.JointPreset = JointPreset[jsonObj.PresetName as string];
+
+        if (jsonObj.With !== undefined) {
+            this.OnMesh = jsonObj.With.toLowerCase();
+        }
+        else if (jsonObj.On != undefined) {
+            this.OnMesh = jsonObj.On.toLowerCase();
+        }
+    }
+}
+class AmPhysicsProperty extends AmUserProperty {
+    PhysicsPropertyName: string;
+    ImpostorType: number;
+    Mass: number;
+    Friction: number;
+    Restitution: number;
+    constructor(jointPropertyInnerHtml: string, switchType: AmUserPropertySwitchType) {
+        var s = jointPropertyInnerHtml.trim().split("\n");
+        var jsonObj = AmInLineObjectParser.ParseTextObjectFromInnerHtml(s[0].substr(8));
+
+        super(switchType, s);
+
+        this.PhysicsPropertyName = jsonObj.Name.toLowerCase();
+        if (jsonObj.Impostor !== undefined) {
+            this.SetImpostor(jsonObj.Impostor);
+        }
+        if (jsonObj.Mass != undefined) {
+            this.Mass = parseFloat(jsonObj.Mass);
+        }
+        if (jsonObj.Friction != undefined) {
+            this.Friction = parseFloat(jsonObj.Friction);
+        }
+        if (jsonObj.Bounce != undefined) {
+            this.Restitution = parseFloat(jsonObj.Bounce);
+        }
+    }
+
+    private SetImpostor(impostor: string) {
+        switch (impostor.toLowerCase()) {
+            case "plane":
+                this.ImpostorType = BABYLON.PhysicsImpostor.PlaneImpostor;
+                break;
+            case "box":
+                this.ImpostorType = BABYLON.PhysicsImpostor.BoxImpostor;
+                break;
+            case "cylinder":
+                this.ImpostorType = BABYLON.PhysicsImpostor.CylinderImpostor;
+                break;
+            case "sphere":
+                this.ImpostorType = BABYLON.PhysicsImpostor.SphereImpostor;
+                break;
+            case "mesh":
+                this.ImpostorType = BABYLON.PhysicsImpostor.MeshImpostor;
+                break;
+            case "none":
+                this.ImpostorType = BABYLON.PhysicsImpostor.NoImpostor;
+                break;
+            default:
+                alert("Impostor " + impostor + " not implemented");
+                break;
+        }
+    }
+}
+
 enum AmUserPropertySwitchType {
     BOOL = 0,
     PERCENT = 1
