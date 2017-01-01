@@ -304,32 +304,39 @@ class AnimationMasterModelLoader {
         return positions;
     }
     private AssignPhysicsPropertiesToGroupMeshes() {
-        var meshGroups = new Array<AmGroup>();
-        for (var i = 0; i < this.amModel.Groups.length; i++) {
-            var groupMesh = this.amModel.Groups[i];
-            if (groupMesh.IsMesh) {
-                meshGroups.push(groupMesh);
-            }
-        }
-
         //apply physics settings
-        for (var i = 0; i < meshGroups.length; i++) {
-            var group = meshGroups[i];
+        for (var i = 0; i < this.amModel.Groups.length; i++) {
+            var group = this.amModel.Groups[i];
+            if (group.PhysicsPropertyName !== undefined){
+            var physProp = this.GetPhysicsPropertyByName(group.PhysicsPropertyName);            
             //Make sure that it has at least one physics property assigned, otherwise skip it
-            if (group.Mass !== undefined || group.Friction !== undefined || group.Restitution !== undefined || group.ImpostorType !== undefined) {
-                var mass = (group.Mass === undefined) ? 1 : group.Mass;
-                var friction = (group.Friction === undefined) ? 0.2 : group.Friction;
-                var restitution = (group.Restitution === undefined) ? 0.1 : group.Restitution;
-                var impostorType = (group.ImpostorType === undefined) ? BABYLON.PhysicsImpostor.BoxImpostor : group.ImpostorType;
+           
+                var mass = (physProp.Mass === undefined) ? 1 : physProp.Mass;
+                var friction = (physProp.Friction === undefined) ? 0.2 : physProp.Friction;
+                var restitution = (physProp.Restitution === undefined) ? 0.1 : physProp.Restitution;
+                var impostorType = (physProp.ImpostorType === undefined) ? BABYLON.PhysicsImpostor.BoxImpostor : physProp.ImpostorType;
 
                 group.GroupMesh.position = group.GroupMeshPosition;
-                group.GroupMesh.physicsImpostor = new BABYLON.PhysicsImpostor(meshGroups[i].GroupMesh, impostorType, { mass: mass, friction: friction, restitution: restitution }, this.scene);
+                group.GroupMesh.physicsImpostor = new BABYLON.PhysicsImpostor(group.GroupMesh, impostorType, { mass: mass, friction: friction, restitution: restitution }, this.scene);
             }
-            else {
+            else if (group.IsMesh){
                 //move the object to original position
                 group.GroupMesh.position = group.GroupMeshPosition;
             }
         }
+    }
+    private GetPhysicsPropertyByName(name: string): AmPhysicsProperty {
+        var amProp: AmPhysicsProperty;
+        for (var i = 0; i < this.amModel.PhysicsUserProperties.length; i++) {
+            var p = this.amModel.PhysicsUserProperties[i];
+            if (p.PhysicsPropertyName === name) {
+                amProp = p;
+            }
+        }
+        if (amProp === undefined) {
+            throw ("Could not find PhysicsProperty '" + name + "'.");
+        }
+        return amProp;
     }
     private AddJoints() {
         var presetJointProcessor = new JointPresetProcessor();
@@ -337,7 +344,7 @@ class AnimationMasterModelLoader {
         for (var i = 0; i < this.amModel.Groups.length; i++) {
             var g = this.amModel.Groups[i];
             if (g.JointPropertyName !== undefined) {
-                var amProperty = presetJointProcessor.GetAmJointPropertyByName(this.amModel.UserProperties, g.JointPropertyName);
+                var amProperty = presetJointProcessor.GetAmJointPropertyByName(this.amModel.JointsUserProperties, g.JointPropertyName);
                 switch (amProperty.JointPreset) {
                     case JointPreset.RIPZ:
                         var otherMesh = presetJointProcessor.GetGroupByName(this.amModel.Groups, amProperty.OnMesh).GroupMesh;

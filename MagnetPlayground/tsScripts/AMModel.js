@@ -1,3 +1,8 @@
+var __extends = (this && this.__extends) || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+};
 var AMModel = (function () {
     function AMModel(LoadedFile) {
         var xmlModel = $.parseXML(LoadedFile);
@@ -12,7 +17,8 @@ var AMModel = (function () {
     AMModel.prototype.LoadUserProperties = function (mesh) {
         //This will get folders, User Properties is a folder
         var propertyFoldersData = mesh.getElementsByTagName("USERPROPERTY");
-        this.UserProperties = new Array();
+        this.JointsUserProperties = new Array();
+        this.PhysicsUserProperties = new Array();
         for (var i = 0; i < propertyFoldersData.length; i++) {
             var currFolder = propertyFoldersData[i];
             for (var p = 0; p < currFolder.childNodes.length; p++) {
@@ -20,10 +26,10 @@ var AMModel = (function () {
                 if (property.nodeName === "BOOL" || property.nodeName === "PERCENT") {
                     var innerHtml = property.innerHTML.trim();
                     if (innerHtml.indexOf("-joint") === 0) {
-                        this.UserProperties.push(new AmUserProperty(innerHtml, AmUserPropertySwitchType[property.nodeName]));
+                        this.JointsUserProperties.push(new AmJointProperty(innerHtml, AmUserPropertySwitchType[property.nodeName]));
                     }
                     else if (innerHtml.indexOf("-physics") === 0) {
-                        this.UserProperties.push(new AmUserProperty(innerHtml, AmUserPropertySwitchType[property.nodeName]));
+                        this.PhysicsUserProperties.push(new AmPhysicsProperty(innerHtml, AmUserPropertySwitchType[property.nodeName]));
                     }
                 }
             }
@@ -264,41 +270,7 @@ var AmGroup = (function () {
             this.IsMesh = true;
             var jsonObj = AmInLineObjectParser.ParseTextObjectFromInnerHtml(name.substr(5));
             if (jsonObj.Name !== undefined) {
-                this.Name = jsonObj.Name;
-            }
-            if (jsonObj.Mass !== undefined) {
-                this.Mass = parseFloat(jsonObj.Mass);
-            }
-            if (jsonObj.Friction !== undefined) {
-                this.Friction = parseFloat(jsonObj.Friction);
-            }
-            if (jsonObj.Restitution !== undefined) {
-                this.Restitution = parseFloat(jsonObj.Restitution);
-            }
-            if (jsonObj.Impostor !== undefined) {
-                switch (jsonObj.Impostor.toLowerCase()) {
-                    case "plane":
-                        this.ImpostorType = BABYLON.PhysicsImpostor.PlaneImpostor;
-                        break;
-                    case "box":
-                        this.ImpostorType = BABYLON.PhysicsImpostor.BoxImpostor;
-                        break;
-                    case "cylinder":
-                        this.ImpostorType = BABYLON.PhysicsImpostor.CylinderImpostor;
-                        break;
-                    case "sphere":
-                        this.ImpostorType = BABYLON.PhysicsImpostor.SphereImpostor;
-                        break;
-                    case "mesh":
-                        this.ImpostorType = BABYLON.PhysicsImpostor.MeshImpostor;
-                        break;
-                    case "none":
-                        this.ImpostorType = BABYLON.PhysicsImpostor.NoImpostor;
-                        break;
-                    default:
-                        alert("Impostor " + jsonObj.Impostor + " not implemented");
-                        break;
-                }
+                this.Name = jsonObj.Name.toLowerCase();
             }
             if (jsonObj.PossitivePoleCp !== undefined) {
                 this.MagnetPositivePoleCp = parseInt(jsonObj.PossitivePoleCp);
@@ -319,7 +291,10 @@ var AmGroup = (function () {
                 }
             }
             if (jsonObj.Joint !== undefined) {
-                this.JointPropertyName = jsonObj.Joint;
+                this.JointPropertyName = jsonObj.Joint.toLowerCase();
+            }
+            if (jsonObj.Physics !== undefined) {
+                this.PhysicsPropertyName = jsonObj.Physics.toLowerCase();
             }
         }
         else {
@@ -366,38 +341,92 @@ var AmGroup = (function () {
     return AmGroup;
 }());
 var AmUserProperty = (function () {
-    function AmUserProperty(jointPropertyInnerHtml, switchType) {
+    function AmUserProperty(switchType, propertyText) {
         this.PercentFactorialValue = 100; //Used for PERCENT properties. It is the max percent on the slider
-        var s = jointPropertyInnerHtml.trim().split("\n");
-        var jsonObj = AmInLineObjectParser.ParseTextObjectFromInnerHtml(s[0].substr(6));
-        this.JointPropertyName = jsonObj.Name;
-        this.JointPreset = JointPreset[jsonObj.PresetName];
-        if (jsonObj.With !== undefined) {
-            this.OnMesh = jsonObj.With;
-        }
-        else if (jsonObj.On != undefined) {
-            this.OnMesh = jsonObj.On;
-        }
         this.SwitchType = switchType;
-        for (var i = 1; i < s.length; i++) {
-            if (s[i].indexOf("DefaultValue=") === 0) {
-                this.BoolDefaultValue = (s[i].substr(13) === "TRUE") ? true : false;
+        for (var i = 1; i < propertyText.length; i++) {
+            if (propertyText[i].indexOf("DefaultValue=") === 0) {
+                this.BoolDefaultValue = (propertyText[i].substr(13) === "TRUE") ? true : false;
             }
-            else if (s[i].indexOf("Value=") === 0) {
+            else if (propertyText[i].indexOf("Value=") === 0) {
                 if (switchType === AmUserPropertySwitchType.BOOL) {
-                    this.BoolValue = (s[i].substr(6) === "TRUE") ? true : false;
+                    this.BoolValue = (propertyText[i].substr(6) === "TRUE") ? true : false;
                 }
                 else if (switchType === AmUserPropertySwitchType.PERCENT) {
-                    this.FloatValue = parseFloat(s[i].substr(6));
+                    this.FloatValue = parseFloat(propertyText[i].substr(6));
                 }
             }
-            else if (s[i].indexOf("FactorValue=") === 0) {
-                this.PercentFactorialValue = parseFloat(s[i].substr(12));
+            else if (propertyText[i].indexOf("FactorValue=") === 0) {
+                this.PercentFactorialValue = parseFloat(propertyText[i].substr(12));
             }
         }
     }
     return AmUserProperty;
 }());
+var AmJointProperty = (function (_super) {
+    __extends(AmJointProperty, _super);
+    function AmJointProperty(jointPropertyInnerHtml, switchType) {
+        var s = jointPropertyInnerHtml.trim().split("\n");
+        var jsonObj = AmInLineObjectParser.ParseTextObjectFromInnerHtml(s[0].substr(6));
+        _super.call(this, switchType, s);
+        this.JointPropertyName = jsonObj.Name.toLowerCase();
+        this.JointPreset = JointPreset[jsonObj.PresetName];
+        if (jsonObj.With !== undefined) {
+            this.OnMesh = jsonObj.With.toLowerCase();
+        }
+        else if (jsonObj.On != undefined) {
+            this.OnMesh = jsonObj.On.toLowerCase();
+        }
+    }
+    return AmJointProperty;
+}(AmUserProperty));
+var AmPhysicsProperty = (function (_super) {
+    __extends(AmPhysicsProperty, _super);
+    function AmPhysicsProperty(jointPropertyInnerHtml, switchType) {
+        var s = jointPropertyInnerHtml.trim().split("\n");
+        var jsonObj = AmInLineObjectParser.ParseTextObjectFromInnerHtml(s[0].substr(8));
+        _super.call(this, switchType, s);
+        this.PhysicsPropertyName = jsonObj.Name.toLowerCase();
+        if (jsonObj.Impostor !== undefined) {
+            this.SetImpostor(jsonObj.Impostor);
+        }
+        if (jsonObj.Mass != undefined) {
+            this.Mass = parseFloat(jsonObj.Mass);
+        }
+        if (jsonObj.Friction != undefined) {
+            this.Friction = parseFloat(jsonObj.Friction);
+        }
+        if (jsonObj.Bounce != undefined) {
+            this.Restitution = parseFloat(jsonObj.Bounce);
+        }
+    }
+    AmPhysicsProperty.prototype.SetImpostor = function (impostor) {
+        switch (impostor.toLowerCase()) {
+            case "plane":
+                this.ImpostorType = BABYLON.PhysicsImpostor.PlaneImpostor;
+                break;
+            case "box":
+                this.ImpostorType = BABYLON.PhysicsImpostor.BoxImpostor;
+                break;
+            case "cylinder":
+                this.ImpostorType = BABYLON.PhysicsImpostor.CylinderImpostor;
+                break;
+            case "sphere":
+                this.ImpostorType = BABYLON.PhysicsImpostor.SphereImpostor;
+                break;
+            case "mesh":
+                this.ImpostorType = BABYLON.PhysicsImpostor.MeshImpostor;
+                break;
+            case "none":
+                this.ImpostorType = BABYLON.PhysicsImpostor.NoImpostor;
+                break;
+            default:
+                alert("Impostor " + impostor + " not implemented");
+                break;
+        }
+    };
+    return AmPhysicsProperty;
+}(AmUserProperty));
 var AmUserPropertySwitchType;
 (function (AmUserPropertySwitchType) {
     AmUserPropertySwitchType[AmUserPropertySwitchType["BOOL"] = 0] = "BOOL";
