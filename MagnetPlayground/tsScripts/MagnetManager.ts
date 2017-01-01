@@ -67,7 +67,7 @@ class MagnetPair {
         var diameter = 0.2;
         var visible = true;
 
-        
+
         if (this.firstMesh.getChildMeshes().length === 0) {
             this.fPosMesh = BABYLON.Mesh.CreateSphere("pospole", segments, diameter, this.scene, false);
             this.fPosMesh.material = redPositive;
@@ -85,7 +85,7 @@ class MagnetPair {
             this.fPosMesh = children[0] as BABYLON.Mesh;
             this.fNegMesh = children[1] as BABYLON.Mesh;
         }
-        
+
         if (this.secondMesh.getChildMeshes().length === 0) {
             this.sPosMesh = BABYLON.Mesh.CreateSphere("pospole", segments, diameter, this.scene, false);
             this.sPosMesh.material = redPositive;
@@ -138,7 +138,12 @@ class MagnetPair {
             endPolePos = sNAbsolute
         }
 
-        this.firstMesh.app
+        //the force is the direction, contact point is wherein the object to apply that force
+        //calculate direction of force towards the secondMesh negative pole, etc.
+        var direction = sNAbsolute.subtract(fPAbsolute);
+        this.firstMesh.applyImpulse(direction.scale(0.0005), startPolePos);
+        var direction = fPAbsolute.subtract(sNAbsolute);
+        this.secondMesh.applyImpulse(direction.scale(0.0005), endPolePos);
 
         return [startPolePos, endPolePos];
     }
