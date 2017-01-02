@@ -1,5 +1,7 @@
-var SceneCreator = (function () {
-    function SceneCreator(canvasId) {
+/// <reference path="constraintsmanager.ts" />
+/// <reference path="magnetmanager.ts" />
+var SceneManager = (function () {
+    function SceneManager(canvasId) {
         this.canvas = document.getElementById(canvasId);
         this.engine = new BABYLON.Engine(this.canvas, true);
         // create a basic BJS Scene object
@@ -21,14 +23,20 @@ var SceneCreator = (function () {
         window.addEventListener('resize', function () {
             sceneForWindowResize.resize();
         });
+        //Create constraints manager
+        this.constraintManager = new ConstraintsManager();
+        var constraintManager = this.constraintManager;
+        this.scene.registerBeforeRender(function () {
+        });
         //Create Magnet manager and subscribe magnets update before render
         this.magnetManager = new MagnetManager();
         var magnetManager = this.magnetManager;
-        this.scene.registerBeforeRender(function () {
+        this.scene.registerAfterRender(function () {
             magnetManager.UpdateMagnets();
+            constraintManager.Update();
         });
     }
-    SceneCreator.prototype.createCamera = function () {
+    SceneManager.prototype.createCamera = function () {
         // create a FreeCamera, and set its position to (x:0, y:5, z:-10)
         this.camera = new BABYLON.FreeCamera('camera1', new BABYLON.Vector3(0, 20, 20), this.scene);
         //this.camera.rotation = new BABYLON.Vector3(this.camera.rotation.x, 180, this.camera.rotation.z);
@@ -37,7 +45,7 @@ var SceneCreator = (function () {
         // attach the camera to the canvas
         this.camera.attachControl(this.canvas, false);
     };
-    SceneCreator.prototype.createLigths = function () {
+    SceneManager.prototype.createLigths = function () {
         // This creates a light, aiming 0,1,0 - to the sky (non-mesh)
         var light = new BABYLON.HemisphericLight("light1", new BABYLON.Vector3(0, 1, 0), this.scene);
         // Default intensity is 1. Let's dim the light a small amount
@@ -54,7 +62,7 @@ var SceneCreator = (function () {
         //this.shadowGenerator.usePoissonSampling = true;
         //this.shadowGenerator.useBlurVarianceShadowMap = true;
     };
-    SceneCreator.prototype.createObjects = function () {
+    SceneManager.prototype.createObjects = function () {
         // create a built-in "ground" shape; its constructor takes the same 5 params as the sphere's one
         var ground = BABYLON.Mesh.CreateGround('ground1', 100, 100, 2, this.scene);
         var materialGround = new BABYLON.StandardMaterial("ground", this.scene);
@@ -67,7 +75,7 @@ var SceneCreator = (function () {
         //this.createWeelAndMagnets();
         //this.createOutsidePullingMagnets();
     };
-    SceneCreator.prototype.createWeelAndMagnets = function () {
+    SceneManager.prototype.createWeelAndMagnets = function () {
         //Create the spinning weel
         var spinningWeel = BABYLON.Mesh.CreateCylinder("spinnigweel", 0.1, 10, 10, 48, 1, this.scene, false);
         spinningWeel.rotation.x = Math.PI / 2; // Rotate 90 degrees on the x-axis.
@@ -94,7 +102,7 @@ var SceneCreator = (function () {
             m.receiveShadows = true;
         }
     };
-    SceneCreator.prototype.createOutsidePullingMagnets = function () {
+    SceneManager.prototype.createOutsidePullingMagnets = function () {
         //Create the spinning weel
         var outsideMagnetsBase = BABYLON.Mesh.CreateCylinder("spinnigweel", 0.1, 10, 10, 48, 1, this.scene, false);
         outsideMagnetsBase.rotation.x = Math.PI / 2; // Rotate 90 degrees on the x-axis.
@@ -127,31 +135,31 @@ var SceneCreator = (function () {
             m.receiveShadows = true;
         }
     };
-    SceneCreator.prototype.rotate_point = function (pointX, pointY, originX, originY, angle) {
+    SceneManager.prototype.rotate_point = function (pointX, pointY, originX, originY, angle) {
         angle = angle * Math.PI / 180.0;
         return {
             x: Math.cos(angle) * (pointX - originX) - Math.sin(angle) * (pointY - originY) + originX,
             y: Math.sin(angle) * (pointX - originX) + Math.cos(angle) * (pointY - originY) + originY
         };
     };
-    SceneCreator.prototype.configureSSAO = function () {
+    SceneManager.prototype.configureSSAO = function () {
         this.ssao = new BABYLON.SSAORenderingPipeline('ssaopipeline', this.scene, 0.9, [this.camera]);
     };
-    SceneCreator.prototype.openFile = function (theFile, fileText) {
+    SceneManager.prototype.openFile = function (theFile, fileText) {
         var xmlLoder = new XmlFileLoader();
         xmlLoder.openFile(this, theFile, fileText);
     };
-    return SceneCreator;
+    return SceneManager;
 }());
 window.addEventListener('DOMContentLoaded', function () {
-    SceneCreator.babylonSceenCreator = new SceneCreator("renderCanvas");
+    SceneManager.babylonSceenCreator = new SceneManager("renderCanvas");
     function handleFileSelect(evt) {
         var files = evt.target.files; // FileList object
         var f = files[0];
         var reader = new FileReader();
         reader.onload = (function (theFile) {
             return function (e) {
-                SceneCreator.babylonSceenCreator.openFile(theFile, e.currentTarget.result);
+                SceneManager.babylonSceenCreator.openFile(theFile, e.currentTarget.result);
             };
         })(f);
         reader.readAsText(f);

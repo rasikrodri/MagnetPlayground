@@ -54,6 +54,7 @@
     <TypeScriptCompile Include="tsScripts\AnimationMasterModelLoader.ts" />
     <TypeScriptCompile Include="tsScripts\app.ts" />
     <TypeScriptCompile Include="tsScripts\babylon.2.4.d.ts" />
+    <TypeScriptCompile Include="tsScripts\ConstraintsManager.ts" />
     <TypeScriptCompile Include="tsScripts\JointsPreset.ts" />
     <TypeScriptCompile Include="tsScripts\MagnetManager.ts" />
     <TypeScriptCompile Include="tsScripts\XmlFileLoader.ts" />

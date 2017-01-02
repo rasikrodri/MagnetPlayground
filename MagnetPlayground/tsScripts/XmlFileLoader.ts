@@ -23,7 +23,7 @@
         //var titleValue = tagObj[0].getElementsByTagName("title")[0].childNodes[0].nodeValue;
     }
 
-    openFile(sceneCreator: SceneCreator, theFile: any, amModelFile: string) {
+    openFile(sceneManag: SceneManager, theFile: any, amModelFile: string) {
 
         var onlyName: string = theFile.name;
         var dotIndex = onlyName.indexOf(".");
@@ -33,15 +33,8 @@
             case "mdl":
                 try {
                     var amModel = new AMModel(amModelFile);
-                    AnimationMasterModelLoader.LoadMeshIntoScene(sceneCreator.scene, amModel);
-
-                    //Create Magnet manager and subscribe magnets update before render
-                    sceneCreator.magnetManager = new MagnetManager();
-                    var magnetManager = sceneCreator.magnetManager;
-                    sceneCreator.scene.registerBeforeRender(function () {
-                        magnetManager.UpdateMagnets();
-                    });
-                    sceneCreator.magnetManager.AddMagnetsFromAMGroupMeshes(sceneCreator.scene, amModel); 
+                    AnimationMasterModelLoader.LoadMeshIntoScene(sceneManag, amModel);
+                    sceneManag.magnetManager.AddMagnetsFromAMGroupMeshes(sceneManag.scene, amModel); 
                     break;
                 }
                 catch (e) {
