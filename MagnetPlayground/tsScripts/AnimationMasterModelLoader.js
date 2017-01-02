@@ -1,13 +1,13 @@
 ///Only mesh groups will be loaded if at least one is found,
 ///otherwise the whole model will be loaded
 var AnimationMasterModelLoader = (function () {
-    function AnimationMasterModelLoader(scene, amModel) {
+    function AnimationMasterModelLoader(sceneManag, amModel) {
         this.amModelNumber = 0;
-        this.scene = scene;
+        this.sceneManag = sceneManag;
         this.amModel = amModel;
     }
-    AnimationMasterModelLoader.LoadMeshIntoScene = function (sceneCreator, amModel) {
-        var meshLoader = new AnimationMasterModelLoader(sceneCreator, amModel);
+    AnimationMasterModelLoader.LoadMeshIntoScene = function (sceneManag, amModel) {
+        var meshLoader = new AnimationMasterModelLoader(sceneManag, amModel);
         meshLoader.CreateMeshInScene();
     };
     AnimationMasterModelLoader.prototype.CreateMeshInScene = function () {
@@ -15,6 +15,9 @@ var AnimationMasterModelLoader = (function () {
             return true;
         } })) {
             this.BuildMeshFromGroups();
+            this.AssignPhysicsPropertiesToGroupMeshes();
+            this.AddJoints();
+            this.AddConstrains();
         }
         else {
             this.BuildPolygonMeshFromAmModel();
@@ -22,7 +25,7 @@ var AnimationMasterModelLoader = (function () {
     };
     AnimationMasterModelLoader.prototype.BuildPolygonMeshFromAmModel = function () {
         this.amModelNumber += 1;
-        var mesh = new BABYLON.Mesh("amModel-" + this.amModelNumber, this.scene);
+        var mesh = new BABYLON.Mesh("amModel-" + this.amModelNumber, this.sceneManag.scene);
         ////sceneCreator.shadowGenerator.getShadowMap().renderList.push(amModel);
         //amModel.receiveShadows = true;
         //var mat = new BABYLON.StandardMaterial(amModel.name + "Mat", sceneCreator.scene);
@@ -124,17 +127,13 @@ var AnimationMasterModelLoader = (function () {
                 }
             }
         }
-        //now apply physics to the group meshes
-        this.AssignPhysicsPropertiesToGroupMeshes();
-        this.AddJoints();
-        //addJoints(groups);       
     };
     AnimationMasterModelLoader.prototype.BuildPolygonMeshFromAmModelFromGroupsMesh = function (groupMesh) {
-        groupMesh.GroupMesh = new BABYLON.Mesh(groupMesh.Name, this.scene);
+        groupMesh.GroupMesh = new BABYLON.Mesh(groupMesh.Name, this.sceneManag.scene);
         //groupMesh.GroupMesh.showBoundingBox = true
         //sceneCreator.shadowGenerator.getShadowMap().renderList.push(groupMesh.GroupMesh);
         //groupMesh.GroupMesh.receiveShadows = true;
-        var mat = new BABYLON.StandardMaterial(groupMesh.Name, this.scene);
+        var mat = new BABYLON.StandardMaterial(groupMesh.Name, this.sceneManag.scene);
         mat.diffuseColor = new BABYLON.Color3(.1, .5, .5);
         //mat.backFaceCulling = false;
         groupMesh.GroupMesh.material = mat;
@@ -281,7 +280,7 @@ var AnimationMasterModelLoader = (function () {
                 var restitution = (physProp.Restitution === undefined) ? 0.1 : physProp.Restitution;
                 var impostorType = (physProp.ImpostorType === undefined) ? BABYLON.PhysicsImpostor.BoxImpostor : physProp.ImpostorType;
                 group.GroupMesh.position = group.GroupMeshPosition;
-                group.GroupMesh.physicsImpostor = new BABYLON.PhysicsImpostor(group.GroupMesh, impostorType, { mass: mass, friction: friction, restitution: restitution }, this.scene);
+                group.GroupMesh.physicsImpostor = new BABYLON.PhysicsImpostor(group.GroupMesh, impostorType, { mass: mass, friction: friction, restitution: restitution }, this.sceneManag.scene);
             }
             else if (group.IsMesh) {
                 //move the object to original position
@@ -328,6 +327,16 @@ var AnimationMasterModelLoader = (function () {
                 }
             }
         }
+    };
+    AnimationMasterModelLoader.prototype.AddConstrains = function () {
+        var sceneManag = this.sceneManag;
+        this.amModel.Groups.some(function (g) {
+            if (g.Name === "spiningweel") {
+                sceneManag.constraintManager.CreateRotationConstraintX(g.GroupMesh, 0, 0);
+                sceneManag.constraintManager.CreateRotationConstraintY(g.GroupMesh, 0, 0);
+                return true;
+            }
+        });
     };
     return AnimationMasterModelLoader;
 }());

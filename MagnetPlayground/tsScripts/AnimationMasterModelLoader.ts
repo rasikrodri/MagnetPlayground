@@ -2,23 +2,25 @@
 ///otherwise the whole model will be loaded
 
 class AnimationMasterModelLoader {
-    private scene: BABYLON.Scene;
+    private sceneManag: SceneManager;
     private amModel: AMModel;
 
-    static LoadMeshIntoScene(sceneCreator: BABYLON.Scene, amModel: AMModel) {
-        var meshLoader = new AnimationMasterModelLoader(sceneCreator, amModel)
+    static LoadMeshIntoScene(sceneManag: SceneManager, amModel: AMModel) {
+        var meshLoader = new AnimationMasterModelLoader(sceneManag, amModel)
         meshLoader.CreateMeshInScene();
     }
 
-    constructor(scene: BABYLON.Scene, amModel: AMModel) {
-        this.scene = scene;
+    constructor(sceneManag: SceneManager, amModel: AMModel) {
+        this.sceneManag = sceneManag;
         this.amModel = amModel;
     }
 
     private CreateMeshInScene() {
         if (this.amModel.Groups.some(function (e): boolean { if (e.IsMesh === true) { return true; } })) {
             this.BuildMeshFromGroups()
-            //this.AddMagnetsCode()
+            this.AssignPhysicsPropertiesToGroupMeshes();
+            this.AddJoints();
+            this.AddConstrains();
         }
         else {
             this.BuildPolygonMeshFromAmModel();
@@ -27,7 +29,7 @@ class AnimationMasterModelLoader {
     private amModelNumber: number = 0;
     private BuildPolygonMeshFromAmModel() {
         this.amModelNumber += 1;
-        var mesh = new BABYLON.Mesh("amModel-" + this.amModelNumber, this.scene);
+        var mesh = new BABYLON.Mesh("amModel-" + this.amModelNumber, this.sceneManag.scene);
 
         ////sceneCreator.shadowGenerator.getShadowMap().renderList.push(amModel);
         //amModel.receiveShadows = true;
@@ -147,20 +149,15 @@ class AnimationMasterModelLoader {
                 }
             }
         }
-
-        //now apply physics to the group meshes
-        this.AssignPhysicsPropertiesToGroupMeshes();
-        this.AddJoints();
-        //addJoints(groups);       
     }
     private BuildPolygonMeshFromAmModelFromGroupsMesh(groupMesh: AmGroup) {
-        groupMesh.GroupMesh = new BABYLON.Mesh(groupMesh.Name, this.scene);
+        groupMesh.GroupMesh = new BABYLON.Mesh(groupMesh.Name, this.sceneManag.scene);
         //groupMesh.GroupMesh.showBoundingBox = true
 
         //sceneCreator.shadowGenerator.getShadowMap().renderList.push(groupMesh.GroupMesh);
         //groupMesh.GroupMesh.receiveShadows = true;
 
-        var mat = new BABYLON.StandardMaterial(groupMesh.Name, this.scene);
+        var mat = new BABYLON.StandardMaterial(groupMesh.Name, this.sceneManag.scene);
         mat.diffuseColor = new BABYLON.Color3(.1, .5, .5);
         //mat.backFaceCulling = false;
         groupMesh.GroupMesh.material = mat;
@@ -307,19 +304,19 @@ class AnimationMasterModelLoader {
         //apply physics settings
         for (var i = 0; i < this.amModel.Groups.length; i++) {
             var group = this.amModel.Groups[i];
-            if (group.PhysicsPropertyName !== undefined){
-            var physProp = this.GetPhysicsPropertyByName(group.PhysicsPropertyName);            
-            //Make sure that it has at least one physics property assigned, otherwise skip it
-           
+            if (group.PhysicsPropertyName !== undefined) {
+                var physProp = this.GetPhysicsPropertyByName(group.PhysicsPropertyName);
+                //Make sure that it has at least one physics property assigned, otherwise skip it
+
                 var mass = (physProp.Mass === undefined) ? 1 : physProp.Mass;
                 var friction = (physProp.Friction === undefined) ? 0.2 : physProp.Friction;
                 var restitution = (physProp.Restitution === undefined) ? 0.1 : physProp.Restitution;
                 var impostorType = (physProp.ImpostorType === undefined) ? BABYLON.PhysicsImpostor.BoxImpostor : physProp.ImpostorType;
 
                 group.GroupMesh.position = group.GroupMeshPosition;
-                group.GroupMesh.physicsImpostor = new BABYLON.PhysicsImpostor(group.GroupMesh, impostorType, { mass: mass, friction: friction, restitution: restitution }, this.scene);
+                group.GroupMesh.physicsImpostor = new BABYLON.PhysicsImpostor(group.GroupMesh, impostorType, { mass: mass, friction: friction, restitution: restitution }, this.sceneManag.scene);
             }
-            else if (group.IsMesh){
+            else if (group.IsMesh) {
                 //move the object to original position
                 group.GroupMesh.position = group.GroupMeshPosition;
             }
@@ -365,6 +362,18 @@ class AnimationMasterModelLoader {
                 }
             }
         }
+    }
+    private AddConstrains() {
+        var sceneManag = this.sceneManag;
+        this.amModel.Groups.some(function (g) {
+            if (g.Name === "spiningweel") {
+                sceneManag.constraintManager.CreateRotationConstraintX(g.GroupMesh, 0, 0);
+                sceneManag.constraintManager.CreateRotationConstraintY(g.GroupMesh, 0, 0);
+                return true;
+            }
+        })
+
+
     }
 }
 

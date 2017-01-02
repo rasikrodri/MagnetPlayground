@@ -1,6 +1,8 @@
-﻿class SceneCreator {
+﻿/// <reference path="constraintsmanager.ts" />
+/// <reference path="magnetmanager.ts" />
+class SceneManager {
 
-    static babylonSceenCreator: SceneCreator;
+    static babylonSceenCreator: SceneManager;
 
     canvas: HTMLCanvasElement;
     engine: BABYLON.Engine;
@@ -8,6 +10,7 @@
     camera: BABYLON.FreeCamera;
     ssao: BABYLON.SSAORenderingPipeline;
     shadowGenerator: BABYLON.ShadowGenerator;
+    constraintManager: ConstraintsManager;
     magnetManager: MagnetManager;
 
     constructor(canvasId: string) {
@@ -41,12 +44,23 @@
             sceneForWindowResize.resize();
         });
 
-        //Create Magnet manager and subscribe magnets update before render
-        this.magnetManager = new MagnetManager();         
-        var magnetManager = this.magnetManager;
+        
+        //Create constraints manager
+        this.constraintManager = new ConstraintsManager();
+        var constraintManager = this.constraintManager;
         this.scene.registerBeforeRender(function () {
-            magnetManager.UpdateMagnets();
+            
         });
+
+        
+        //Create Magnet manager and subscribe magnets update before render
+        this.magnetManager = new MagnetManager();
+        var magnetManager = this.magnetManager;
+        this.scene.registerAfterRender(function () {
+            magnetManager.UpdateMagnets(); 
+            constraintManager.Update();           
+        });
+
     }
 
     createCamera() {
@@ -183,7 +197,7 @@
 
 window.addEventListener('DOMContentLoaded', function () {
 
-    SceneCreator.babylonSceenCreator = new SceneCreator("renderCanvas");
+    SceneManager.babylonSceenCreator = new SceneManager("renderCanvas");
 
     function handleFileSelect(evt) {
 
@@ -192,7 +206,7 @@ window.addEventListener('DOMContentLoaded', function () {
         var reader = new FileReader();
         reader.onload = (function (theFile) {
             return function (e) {
-                SceneCreator.babylonSceenCreator.openFile(theFile, e.currentTarget.result);
+                SceneManager.babylonSceenCreator.openFile(theFile, e.currentTarget.result);
             };
         })(f);
 

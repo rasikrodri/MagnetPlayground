@@ -20,7 +20,7 @@ var XmlFileLoader = (function () {
         //var typeValue = tagObj[0].getElementsByTagName("type")[0].childNodes[0].nodeValue;
         //var titleValue = tagObj[0].getElementsByTagName("title")[0].childNodes[0].nodeValue;
     };
-    XmlFileLoader.prototype.openFile = function (sceneCreator, theFile, amModelFile) {
+    XmlFileLoader.prototype.openFile = function (sceneManag, theFile, amModelFile) {
         var onlyName = theFile.name;
         var dotIndex = onlyName.indexOf(".");
         var fileExtension = onlyName.substring(dotIndex + 1);
@@ -28,14 +28,8 @@ var XmlFileLoader = (function () {
             case "mdl":
                 try {
                     var amModel = new AMModel(amModelFile);
-                    AnimationMasterModelLoader.LoadMeshIntoScene(sceneCreator.scene, amModel);
-                    //Create Magnet manager and subscribe magnets update before render
-                    sceneCreator.magnetManager = new MagnetManager();
-                    var magnetManager = sceneCreator.magnetManager;
-                    sceneCreator.scene.registerBeforeRender(function () {
-                        magnetManager.UpdateMagnets();
-                    });
-                    sceneCreator.magnetManager.AddMagnetsFromAMGroupMeshes(sceneCreator.scene, amModel);
+                    AnimationMasterModelLoader.LoadMeshIntoScene(sceneManag, amModel);
+                    sceneManag.magnetManager.AddMagnetsFromAMGroupMeshes(sceneManag.scene, amModel);
                     break;
                 }
                 catch (e) {

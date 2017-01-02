@@ -13,6 +13,14 @@
             }
         });
 
+        var weelMesh: BABYLON.Mesh;
+        _amModel.Groups.some(function (g) {
+            if (g.Name === "spiningweel") {
+                weelMesh = g.GroupMesh;
+                return true;
+            }
+        })
+
         //Create MagnetPars
         var twinCp: AmCP;
         for (var i = 0; i < magnetGroups.length; i++) {
@@ -147,6 +155,8 @@ class MagnetPair {
 
         return [startPolePos, endPolePos];
     }
+
+
     Update() {
         this.UpdateLine();
     }
