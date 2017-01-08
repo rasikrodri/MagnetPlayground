@@ -42,7 +42,7 @@ var MagnetPair = (function () {
         this.firstMesh = firstMesh;
         this.secondMesh = secondMesh;
         this.CreatePolesMeshes(fPositive, fNegative, sPositive, sNegative);
-        this.CreateLines();
+        this.CreateLines([new BABYLON.Vector3(0, 0, 0), new BABYLON.Vector3(1, 1, 1)]); //if the second vector is also 0,0,0 the dashed lines will not show.
     }
     MagnetPair.prototype.CreatePolesMeshes = function (fPositive, fNegative, sPositive, sNegative) {
         var redPositive = new BABYLON.StandardMaterial("redPositive", this.scene);
@@ -87,15 +87,15 @@ var MagnetPair = (function () {
             this.sNegMesh = children[1];
         }
     };
-    MagnetPair.prototype.CreateLines = function () {
-        this.lines = BABYLON.Mesh.CreateLines("lines", this.CalculateLinePosition(), this.scene, true);
-        //this.lines = BABYLON.Mesh.CreateDashedLines("lines", [this.firstMesh.position, this.secondMesh.position], 0.5, 0.5, 10, this.scene, true);
+    MagnetPair.prototype.CreateLines = function (points) {
+        this.lines = BABYLON.Mesh.CreateLines("lines", points, this.scene, true);
+        //this.lines = BABYLON.Mesh.CreateDashedLines("lines", points, 0.5, 0.5, 10, this.scene, true);
     };
-    MagnetPair.prototype.UpdateLine = function () {
-        this.lines = BABYLON.MeshBuilder.CreateLines(null, { points: this.CalculateLinePosition(), instance: this.lines }, this.scene);
-        //this.lines = BABYLON.MeshBuilder.CreateDashedLines(null, { points: [this.firstMesh.position, this.secondMesh.position], instance: this.lines }, this.scene);
+    MagnetPair.prototype.UpdateLine = function (points) {
+        this.lines = BABYLON.MeshBuilder.CreateLines(null, { points: points, instance: this.lines }, this.scene);
+        //this.lines = BABYLON.MeshBuilder.CreateDashedLines(null, { points: points, instance: this.lines }, this.scene);
     };
-    MagnetPair.prototype.CalculateLinePosition = function () {
+    MagnetPair.prototype.Update = function () {
         var fPAbsolute = this.fPosMesh.getAbsolutePosition();
         var fNAbsolute = this.fNegMesh.getAbsolutePosition();
         var sPAbsolute = this.sPosMesh.getAbsolutePosition();
@@ -124,10 +124,7 @@ var MagnetPair = (function () {
         this.firstMesh.applyImpulse(direction.scale(0.0005), startPolePos);
         var direction = fPAbsolute.subtract(sNAbsolute);
         this.secondMesh.applyImpulse(direction.scale(0.0005), endPolePos);
-        return [startPolePos, endPolePos];
-    };
-    MagnetPair.prototype.Update = function () {
-        this.UpdateLine();
+        this.UpdateLine([startPolePos, endPolePos]);
     };
     return MagnetPair;
 }());
