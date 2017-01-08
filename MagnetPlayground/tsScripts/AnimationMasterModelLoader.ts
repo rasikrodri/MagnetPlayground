@@ -367,8 +367,9 @@ class AnimationMasterModelLoader {
         var sceneManag = this.sceneManag;
         this.amModel.Groups.some(function (g) {
             if (g.Name === "spiningweel") {
-                sceneManag.constraintManager.CreateRotationConstraintX(g.GroupMesh, 0, 0);
-                sceneManag.constraintManager.CreateRotationConstraintY(g.GroupMesh, 0, 0);
+                //sceneManag.constraintManager.CreateRotationConstraintX(g.GroupMesh, 0, 0);
+                //sceneManag.constraintManager.CreateRotationConstraintY(g.GroupMesh, 0, 0);
+                //sceneManag.constraintManager.CreateRotationConstraintZ(g.GroupMesh, 1, 10);
                 return true;
             }
         })

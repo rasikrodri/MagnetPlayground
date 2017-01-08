@@ -27,13 +27,13 @@ var SceneManager = (function () {
         this.constraintManager = new ConstraintsManager();
         var constraintManager = this.constraintManager;
         this.scene.registerBeforeRender(function () {
+            constraintManager.Update();
         });
         //Create Magnet manager and subscribe magnets update before render
         this.magnetManager = new MagnetManager();
         var magnetManager = this.magnetManager;
         this.scene.registerAfterRender(function () {
             magnetManager.UpdateMagnets();
-            constraintManager.Update();
         });
     }
     SceneManager.prototype.createCamera = function () {

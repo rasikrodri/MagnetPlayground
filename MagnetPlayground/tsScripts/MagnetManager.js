@@ -11,13 +11,6 @@ var MagnetManager = (function () {
                 magnetGroups.push(group);
             }
         });
-        var weelMesh;
-        _amModel.Groups.some(function (g) {
-            if (g.Name === "spiningweel") {
-                weelMesh = g.GroupMesh;
-                return true;
-            }
-        });
         //Create MagnetPars
         var twinCp;
         for (var i = 0; i < magnetGroups.length; i++) {

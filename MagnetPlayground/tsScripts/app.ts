@@ -49,7 +49,7 @@ class SceneManager {
         this.constraintManager = new ConstraintsManager();
         var constraintManager = this.constraintManager;
         this.scene.registerBeforeRender(function () {
-            
+            constraintManager.Update(); 
         });
 
         
@@ -58,7 +58,7 @@ class SceneManager {
         var magnetManager = this.magnetManager;
         this.scene.registerAfterRender(function () {
             magnetManager.UpdateMagnets(); 
-            constraintManager.Update();           
+                      
         });
 
     }
