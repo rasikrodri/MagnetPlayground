@@ -30,6 +30,7 @@ var SceneManager = (function () {
             constraintManager.Update();
         });
         //Create Magnet manager and subscribe magnets update before render
+        MagnetPair.PrepareLinesMaterials(this.scene);
         this.magnetManager = new MagnetManager();
         var magnetManager = this.magnetManager;
         this.scene.registerAfterRender(function () {

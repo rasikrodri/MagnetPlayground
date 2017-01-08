@@ -63,7 +63,8 @@ var JointPresetProcessor = (function () {
         meshTojoin.physicsImpostor.addJoint(meshToJoinToo.physicsImpostor, hingeJoint);
     };
     JointPresetProcessor.prototype.SetJointJoinWith = function (meshTojoin, meshToJoinToo) {
-        meshTojoin.physicsImpostor.createJoint(meshToJoinToo.physicsImpostor, BABYLON.PhysicsJoint.LockJoint, new BABYLON.Vector3(0, 0, 0));
+        //meshTojoin.physicsImpostor.createJoint(meshToJoinToo.physicsImpostor, BABYLON.PhysicsJoint.UniversalJoint, new BABYLON.Vector3(0, 0, 0));
+        meshTojoin.physicsImpostor.createJoint(meshToJoinToo.physicsImpostor, BABYLON.PhysicsJoint.LockJoint, new BABYLON.Vector3(1, 1, 1));
     };
     return JointPresetProcessor;
 }());

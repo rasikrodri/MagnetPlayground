@@ -72,6 +72,7 @@ class JointPresetProcessor {
 
     }
     SetJointJoinWith(meshTojoin: BABYLON.Mesh, meshToJoinToo: BABYLON.Mesh) {
-        meshTojoin.physicsImpostor.createJoint(meshToJoinToo.physicsImpostor, BABYLON.PhysicsJoint.LockJoint, new BABYLON.Vector3(0, 0, 0));
+        //meshTojoin.physicsImpostor.createJoint(meshToJoinToo.physicsImpostor, BABYLON.PhysicsJoint.UniversalJoint, new BABYLON.Vector3(0, 0, 0));
+        meshTojoin.physicsImpostor.createJoint(meshToJoinToo.physicsImpostor, BABYLON.PhysicsJoint.LockJoint, new BABYLON.Vector3(1, 1, 1));
     }
 }

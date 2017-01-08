@@ -5,6 +5,41 @@
     }
 
     AddMagnetsFromAMGroupMeshes(_scene: BABYLON.Scene, _amModel: AMModel) {
+
+        this.CustomCreateMagnetPairs(_scene, _amModel);
+
+        ////Get magnet meshes
+        //var magnetGroups = new Array<AmGroup>();
+        //_amModel.Groups.forEach(function (group, i, groups) {
+        //    if (group.MagnetNegativePoleCp !== undefined) {
+        //        magnetGroups.push(group);
+        //    }
+        //});
+
+        ////Create MagnetPars
+        //var twinCp: AmCP;
+        //for (var i = 0; i < magnetGroups.length; i++) {
+        //    var firstGroup = magnetGroups[i];
+        //    twinCp = _amModel.OrderedCps[firstGroup.MagnetPositivePoleCp].GetBaseTwinCP(_amModel.OrderedCps);
+        //    var fPositivePosition = new BABYLON.Vector3(twinCp.X, twinCp.Y, twinCp.Z);
+        //    twinCp = _amModel.OrderedCps[firstGroup.MagnetNegativePoleCp].GetBaseTwinCP(_amModel.OrderedCps);
+        //    var fNegativePosition = new BABYLON.Vector3(twinCp.X, twinCp.Y, twinCp.Z);
+        //    for (var a = i + 1; a < magnetGroups.length; a++) {
+        //        var secondGroup = magnetGroups[a];
+
+        //        if (this.DoesItMatchesPreset(firstGroup, secondGroup)) {
+        //            twinCp = _amModel.OrderedCps[secondGroup.MagnetPositivePoleCp].GetBaseTwinCP(_amModel.OrderedCps);
+        //            var sPositivePosition = new BABYLON.Vector3(twinCp.X, twinCp.Y, twinCp.Z);
+        //            twinCp = _amModel.OrderedCps[secondGroup.MagnetNegativePoleCp].GetBaseTwinCP(_amModel.OrderedCps);
+        //            var sNegativePosition = new BABYLON.Vector3(twinCp.X, twinCp.Y, twinCp.Z);
+        //            this.magnets.push(new MagnetPair(_scene, firstGroup.GroupMesh, secondGroup.GroupMesh,
+        //                fPositivePosition, fNegativePosition, sPositivePosition, sNegativePosition));
+        //        }
+        //    }
+        //}
+    }
+
+    private CustomCreateMagnetPairs(_scene: BABYLON.Scene, _amModel: AMModel) {
         //Get magnet meshes
         var magnetGroups = new Array<AmGroup>();
         _amModel.Groups.forEach(function (group, i, groups) {
@@ -12,23 +47,35 @@
                 magnetGroups.push(group);
             }
         });
-        
+
+        var weelMagnets = new Array<AmGroup>();
+        var staticMagnets = new Array<AmGroup>();
+        magnetGroups.forEach(function (group, i, groups) {
+            if (group.PhysicsPropertyName == "weelmagnets") {
+                weelMagnets.push(group);
+            }
+            else if (group.PhysicsPropertyName == "staticmagnets") {
+                staticMagnets.push(group);
+            }
+        });
+
+
         //Create MagnetPars
         var twinCp: AmCP;
-        for (var i = 0; i < magnetGroups.length; i++) {
-            var firstGroup = magnetGroups[i];
+        for (var i = 0; i < weelMagnets.length; i++) {
+            var firstGroup = weelMagnets[i];
             twinCp = _amModel.OrderedCps[firstGroup.MagnetPositivePoleCp].GetBaseTwinCP(_amModel.OrderedCps);
             var fPositivePosition = new BABYLON.Vector3(twinCp.X, twinCp.Y, twinCp.Z);
             twinCp = _amModel.OrderedCps[firstGroup.MagnetNegativePoleCp].GetBaseTwinCP(_amModel.OrderedCps);
             var fNegativePosition = new BABYLON.Vector3(twinCp.X, twinCp.Y, twinCp.Z);
-            for (var a = i + 1; a < magnetGroups.length; a++) {
-                var secondGroup = magnetGroups[a];
+            for (var a = 0; a < staticMagnets.length; a++) {
+                var secondGroup = staticMagnets[a];
                 twinCp = _amModel.OrderedCps[secondGroup.MagnetPositivePoleCp].GetBaseTwinCP(_amModel.OrderedCps);
-                var sPosiivePosition = new BABYLON.Vector3(twinCp.X, twinCp.Y, twinCp.Z);
+                var sPositivePosition = new BABYLON.Vector3(twinCp.X, twinCp.Y, twinCp.Z);
                 twinCp = _amModel.OrderedCps[secondGroup.MagnetNegativePoleCp].GetBaseTwinCP(_amModel.OrderedCps);
                 var sNegativePosition = new BABYLON.Vector3(twinCp.X, twinCp.Y, twinCp.Z);
                 this.magnets.push(new MagnetPair(_scene, firstGroup.GroupMesh, secondGroup.GroupMesh,
-                    fPositivePosition, fNegativePosition, sPosiivePosition, sNegativePosition));
+                    fPositivePosition, fNegativePosition, sPositivePosition, sNegativePosition));
             }
         }
     }
@@ -40,7 +87,35 @@
     }
 }
 
+
+
 class MagnetPair {
+    private static hundredMat: BABYLON.Color3;
+    private static nightyMat: BABYLON.Color3;
+    private static eightyMat: BABYLON.Color3;
+    private static seventyMat: BABYLON.Color3;
+    private static sixtyMat: BABYLON.Color3;
+    private static fiftyMat: BABYLON.Color3;
+    private static fourtyMat: BABYLON.Color3;
+    private static thirtyMat: BABYLON.Color3;
+    private static twentyMat: BABYLON.Color3;
+    private static tenMat: BABYLON.Color3;
+    private static zeroMat: BABYLON.Color3;
+    public static PrepareLinesMaterials(scene: BABYLON.Scene) {
+        MagnetPair.hundredMat = new BABYLON.Color3(0, 0, 1);
+        MagnetPair.nightyMat = new BABYLON.Color3(0, 0, 0.9);
+        MagnetPair.eightyMat = new BABYLON.Color3(0, 0, 0.8);
+        MagnetPair.seventyMat = new BABYLON.Color3(0, 0, 0.7);
+        MagnetPair.sixtyMat = new BABYLON.Color3(0, 0, 0.6);
+        MagnetPair.fiftyMat = new BABYLON.Color3(0, 0, 0.5);
+        MagnetPair.fourtyMat = new BABYLON.Color3(0, 0, 0.4);
+        MagnetPair.thirtyMat = new BABYLON.Color3(0, 0, 0.3);
+        MagnetPair.twentyMat = new BABYLON.Color3(0, 0, 0.2);
+        MagnetPair.tenMat = new BABYLON.Color3(0, 0, 0.1);
+        MagnetPair.zeroMat = new BABYLON.Color3(0, 0, 0);
+    }
+
+
     private scene: BABYLON.Scene;
     private firstMesh: BABYLON.Mesh;//first magnet
     private fPosMesh: BABYLON.Mesh;//first magnet positive mesh
@@ -108,10 +183,6 @@ class MagnetPair {
         this.lines = BABYLON.Mesh.CreateLines("lines", points, this.scene, true);
         //this.lines = BABYLON.Mesh.CreateDashedLines("lines", points, 0.5, 0.5, 10, this.scene, true);
     }
-    private UpdateLine(points: Array<BABYLON.Vector3>) {
-        this.lines = BABYLON.MeshBuilder.CreateLines(null, { points: points, instance: this.lines }, this.scene);
-        //this.lines = BABYLON.MeshBuilder.CreateDashedLines(null, { points: points, instance: this.lines }, this.scene);
-    }
 
     Update() {
         var fPAbsolute = this.fPosMesh.getAbsolutePosition();
@@ -142,10 +213,54 @@ class MagnetPair {
         //the force is the direction, contact point is wherein the object to apply that force
         //calculate direction of force towards the secondMesh negative pole, etc.
         var direction = sNAbsolute.subtract(fPAbsolute);
-        this.firstMesh.applyImpulse(direction.scale(0.0005), startPolePos);
+        this.firstMesh.applyImpulse(direction.scale(0.005), startPolePos);
         var direction = fPAbsolute.subtract(sNAbsolute);
-        this.secondMesh.applyImpulse(direction.scale(0.0005), endPolePos);
+        this.secondMesh.applyImpulse(direction.scale(0.005), endPolePos);
 
-        this.UpdateLine([startPolePos, endPolePos]);
+        //update line material
+        this.lines.color = MagnetPair.GetCorrespondetMat(BABYLON.Vector3.Distance(startPolePos, endPolePos));
+
+        //update line
+        this.lines = BABYLON.MeshBuilder.CreateLines(null, { points: [startPolePos, endPolePos], instance: this.lines }, this.scene);
+        //this.lines = BABYLON.MeshBuilder.CreateDashedLines(null, { points: [startPolePos, endPolePos], instance: this.lines }, this.scene);
+    }
+
+    public static GetCorrespondetMat(dist: number): BABYLON.Color3 {
+        //treat 2 as the 100 away from other magnet
+        //until we implement the magnet formula
+        var percent = dist / 10;
+        if (percent > 0.9) {
+            return MagnetPair.hundredMat;
+        }
+        else if (percent > 0.8 && percent <= 0.9) {
+            return MagnetPair.nightyMat;
+        }
+        else if (percent > 0.7 && percent <= 0.8) {
+            return MagnetPair.eightyMat;
+        }
+        else if (percent > 0.6 && percent <= 0.7) {
+            return MagnetPair.seventyMat;
+        }
+        else if (percent > 0.5 && percent <= 0.6) {
+            return MagnetPair.sixtyMat;
+        }
+        else if (percent > 0.4 && percent <= 0.5) {
+            return MagnetPair.fiftyMat;
+        }
+        else if (percent > 0.3 && percent <= 0.4) {
+            return MagnetPair.fourtyMat;
+        }
+        else if (percent > 0.2 && percent <= 0.3) {
+            return MagnetPair.thirtyMat;
+        }
+        else if (percent > 0.1 && percent <= 0.2) {
+            return MagnetPair.twentyMat;
+        }
+        else if (percent > 0 && percent <= 0.1) {
+            return MagnetPair.tenMat;
+        }
+        else if (percent <= 0) {
+            return MagnetPair.zeroMat;
+        }
     }
 }
