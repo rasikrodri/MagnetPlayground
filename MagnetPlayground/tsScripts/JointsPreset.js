@@ -32,16 +32,33 @@ var JointPresetProcessor = (function () {
         }
         return up;
     };
+    JointPresetProcessor.prototype.SetJointRotateInPlaceX = function (meshTojoin, meshToJoinToo) {
+        var hingeJoint = new BABYLON.HingeJoint({
+            mainPivot: new BABYLON.Vector3(0, 0, 0),
+            connectedPivot: new BABYLON.Vector3(0, 0, 0),
+            mainAxis: new BABYLON.Vector3(1, 0, 0),
+            connectedAxis: new BABYLON.Vector3(1, 0, 0),
+            collision: false
+        });
+        meshTojoin.physicsImpostor.addJoint(meshToJoinToo.physicsImpostor, hingeJoint);
+    };
+    JointPresetProcessor.prototype.SetJointRotateInPlaceY = function (meshTojoin, meshToJoinToo) {
+        var hingeJoint = new BABYLON.HingeJoint({
+            mainPivot: new BABYLON.Vector3(0, 0, 0),
+            connectedPivot: new BABYLON.Vector3(0, 0, 0),
+            mainAxis: new BABYLON.Vector3(0, 1, 0),
+            connectedAxis: new BABYLON.Vector3(0, 1, 0),
+            collision: false
+        });
+        meshTojoin.physicsImpostor.addJoint(meshToJoinToo.physicsImpostor, hingeJoint);
+    };
     JointPresetProcessor.prototype.SetJointRotateInPlaceZ = function (meshTojoin, meshToJoinToo) {
         var hingeJoint = new BABYLON.HingeJoint({
             mainPivot: new BABYLON.Vector3(0, 0, 0),
             connectedPivot: new BABYLON.Vector3(0, 0, 0),
-            mainAxis: new BABYLON.Vector3(0, 0, 0),
+            mainAxis: new BABYLON.Vector3(0, 0, 1),
             connectedAxis: new BABYLON.Vector3(0, 0, 1),
-            collision: false,
-            nativeParams: {
-                limit: [90, 90]
-            }
+            collision: false
         });
         meshTojoin.physicsImpostor.addJoint(meshToJoinToo.physicsImpostor, hingeJoint);
     };
